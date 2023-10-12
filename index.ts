@@ -22,13 +22,13 @@ type ServerResponse = {
   results: Person[];
 };
 
-// Global variables
+// Variables globales
 let displayedPeople: Person[] = [];
 let sortBy: any = {};
 
 // Utils
 function drawTable(people: Person[]) {
-  // Prepare table HTML
+  // Preparar tabla HTML
   let tableHTML: string = `
   <thead>
     <tr>
@@ -40,13 +40,13 @@ function drawTable(people: Person[]) {
   </thead>
   <tbody>
   `;
-  // Loop thru all characters to generate rows of the table
+  // Bucle a todos los personajes para crear filas de la tabla
   people.forEach((p: Person) => {
     tableHTML += `<tr><td>${p.name}</td><td>${p.birth_year}</td><td>${p.gender}</td><td>${p.url}</td></tr>`;
   });
-  // Close table body
+  // Cerrar cuerpo de la tabla
   tableHTML += '</tbody>';
-  // Grab table element to set its inner HTML
+  // Seleccionar elemento para configurar su HTML interno
   document.querySelector('#tableElement')!.innerHTML = tableHTML;
 }
 
@@ -97,7 +97,7 @@ fetch('https://swapi.dev/api/people')
   .then(res => res.json())
   .then((data: ServerResponse) => {
     displayedPeople = data.results;
-    // We invoke the draw table function with the 10 initials characters
+    // Invocamos la funcion de dibujar tabla con los primeros 10 personajes
     drawTable(data.results);
 
     const pages = Math.ceil(data.count / 10);
@@ -110,7 +110,7 @@ fetch('https://swapi.dev/api/people')
     }
 
     paginationElement.innerHTML = pagesHTML;
-    // Hide spinner
+    // Esconder spinner
     const spinnerElement: HTMLElement = document.querySelector('#spinnerContainer')!;
     spinnerElement.style.display = 'none';
   });
