@@ -1,46 +1,116 @@
-type Rating = {
-    rate: number;
-    count: number;
+type Person = {
+  birth_year: string;
+  created: Date;
+  edited: Date;
+  eye_color: string;
+  films: string[];
+  gender: string;
+  hair_color: string;
+  height: number;
+  homeworld: string;
+  mass: number;
+  name: string;
+  skin_color: string;
+  species: string[];
+  starships: string[];
+  url: string;
+  vehicles: string[];
 };
 
-type Product = {
-    id: number;
-    title: string;
-    price: number;
-    description: string;
-    category: string;
-    image: string;
-    rating: Rating;
+type ServerResponse = {
+  count: number;
+  results: Person[];
 };
 
-// {
-//     "id": 1,
-//     "title": "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
-//     "price": 109.95,
-//     "description": "Your perfect pack for everyday use and walks in the forest. Stash your laptop (up to 15 inches) in the padded sleeve, your everyday",
-//     "category": "men's clothing",
-//     "image": "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
-//     "rating": {
-//         "rate": 3.9,
-//         "count": 120
-//     }
-// }
+// Global variables
+let displayedPeople: Person[] = [];
+let sortBy: any = {};
 
-fetch('https://fakestoreapi.com/products')
-    .then (res => res.json())
-    .then ((products: Product[]) => {
-        //Prepare table html:
-        let tableHtml: string = '<thead><tr><th>ID</th><th>TITLE</th><th>DESCRIPTION</th><th>PRICE</th></tr></thead><tbody>';
-        //Loop through all products to generate table rows od the table
-        products.forEach((p: Product) =>{
-            tableHtml += `<tr><td>${p.id}</td><td>${p.title}</td><td>${p.description}</td><td>${p.price}</td></tr>`; //con el alt y la tecla de cerrar llave se hace la comilla invertida
-        });
-        //close table body
-        tableHtml += '</tbody>';
-        //grab table element to set its inner html
-        document.querySelector('#tableElement')!.innerHTML = tableHtml;
-        // hide spinner
-        const spinnerElement: HTMLElement = document.querySelector('#spinnerContainer')!; //el signo de exclamacion sirve para indicarle a typescript que el los busque si o si al elemento pq ya sabemos que lo va a encontrar
-        spinnerElement!.style.display = 'none';
+// Utils
+function drawTable(people: Person[]) {
+  // Prepare table HTML
+  let tableHTML: string = `
+  <thead>
+    <tr>
+      <th><button type="button" class="btn btn-link" onclick=sortPeople("name")>Name</button></th>
+      <th><button type="button" class="btn btn-link" onclick=sortPeople("birth_year")>DOB</button></th>
+      <th><button type="button" class="btn btn-link" onclick=sortPeople("gender")>Gender</button></th>
+      <th><button type="button" class="btn btn-link" onclick=sortPeople("url")>URL</button></th>
+    </tr>
+  </thead>
+  <tbody>
+  `;
+  // Loop thru all characters to generate rows of the table
+  people.forEach((p: Person) => {
+    tableHTML += `<tr><td>${p.name}</td><td>${p.birth_year}</td><td>${p.gender}</td><td>${p.url}</td></tr>`;
+  });
+  // Close table body
+  tableHTML += '</tbody>';
+  // Grab table element to set its inner HTML
+  document.querySelector('#tableElement')!.innerHTML = tableHTML;
+}
 
-    }); 
+// Handlers
+function paginateProducts(page: number) {
+  fetch(`https://swapi.dev/api/people/?page=${page}`)
+    .then(res => res.json())
+    .then((data: ServerResponse) => {
+      displayedPeople = data.results;
+      drawTable(data.results);
+    });
+}
+
+function filterPeople(value: string) {
+  const filteredPeople = displayedPeople.filter((p: Person) => p.name.toLowerCase().includes(value.toLowerCase())
+    || p.birth_year.toLowerCase().includes(value.toLowerCase())
+    || p.gender.toLowerCase().includes(value.toLowerCase())
+    || p.url.toLowerCase().includes(value.toLowerCase()));
+
+  drawTable(filteredPeople);
+}
+
+function sortPeople(prop: string) {
+  if (sortBy[prop]) {
+    if (sortBy[prop] === 'asc') {
+      sortBy[prop] = 'desc';
+    } else if (sortBy[prop] === 'desc') {
+      sortBy[prop] = null;
+    }
+  } else {
+    sortBy = { [prop]: 'asc' };
+  } 
+
+  const sortedPeople = displayedPeople.toSorted((a: Person, b: Person) => {
+    if (sortBy[prop] === 'asc') {
+      return a[prop] > b[prop] ? 1 : a[prop] < b[prop] ? -1 : 0;
+    } else if (sortBy[prop] === 'desc') {
+      return a[prop] < b[prop] ? 1 : a[prop] > b[prop] ? -1 : 0;
+    } else {
+      return displayedPeople;
+    }
+  });
+
+  drawTable(sortedPeople);
+}
+
+fetch('https://swapi.dev/api/people')
+  .then(res => res.json())
+  .then((data: ServerResponse) => {
+    displayedPeople = data.results;
+    // We invoke the draw table function with the 10 initials characters
+    drawTable(data.results);
+
+    const pages = Math.ceil(data.count / 10);
+
+    const paginationElement: any = document.querySelector('#paginationElement');
+    let pagesHTML = '';
+
+    for (let index = 1; index <= pages; index++) {
+      pagesHTML += `<li class="page-item"><a class="page-link" href="#" onclick="paginateProducts(${index})">${index}</a></li>`
+    }
+
+    paginationElement.innerHTML = pagesHTML;
+    // Hide spinner
+    const spinnerElement: HTMLElement = document.querySelector('#spinnerContainer')!;
+    spinnerElement.style.display = 'none';
+  });
